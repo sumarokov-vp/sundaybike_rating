@@ -1,0 +1,43 @@
+from . import attributes as attributes, path_registry as path_registry
+from .. import util as util
+from ..engine import result_tuple as result_tuple
+from ..engine.cursor import CursorResult as CursorResult
+from ..engine.interfaces import _ExecuteOptions
+from ..engine.result import ChunkedIteratorResult as ChunkedIteratorResult, FrozenResult as FrozenResult, Result as Result, SimpleResultMetaData as SimpleResultMetaData
+from ..sql import Select as Select, select as select
+from ..sql.selectable import ForUpdateArg as ForUpdateArg, LABEL_STYLE_TABLENAME_PLUS_COL as LABEL_STYLE_TABLENAME_PLUS_COL, SelectState as SelectState
+from ..util import EMPTY_DICT as EMPTY_DICT
+from ._typing import _IdentityKeyType
+from .base import LoaderCallableStatus as LoaderCallableStatus, PassiveFlag as PassiveFlag
+from .context import FromStatement as FromStatement, ORMCompileState as ORMCompileState, QueryContext as QueryContext
+from .interfaces import ORMOption as ORMOption
+from .mapper import Mapper as Mapper
+from .query import Query as Query
+from .session import Session as Session
+from .state import InstanceState as InstanceState
+from .util import state_str as state_str
+from _typeshed import Incomplete
+from typing import Any, Iterable, Mapping, Optional, Sequence, Tuple, Union
+
+def instances(cursor: CursorResult[Any], context: QueryContext) -> Result[Any]: ...
+def merge_frozen_result(session, statement, frozen_result, load: bool = ...): ...
+def merge_result(query: Query[Any], iterator: Union[FrozenResult, Iterable[Sequence[Any]], Iterable[object]], load: bool = ...) -> Union[FrozenResult, Iterable[Any]]: ...
+def get_from_identity(session: Session, mapper: Mapper[_O], key: _IdentityKeyType[_O], passive: PassiveFlag) -> Union[LoaderCallableStatus, Optional[_O]]: ...
+def load_on_ident(session: Session, statement: Union[Select, FromStatement], key: Optional[_IdentityKeyType], *, load_options: Optional[Sequence[ORMOption]] = ..., refresh_state: Optional[InstanceState[Any]] = ..., with_for_update: Optional[ForUpdateArg] = ..., only_load_props: Optional[Iterable[str]] = ..., no_autoflush: bool = ..., bind_arguments: Mapping[str, Any] = ..., execution_options: _ExecuteOptions = ..., require_pk_cols: bool = ..., is_user_refresh: bool = ...): ...
+def load_on_pk_identity(session: Session, statement: Union[Select, FromStatement], primary_key_identity: Optional[Tuple[Any, ...]], *, load_options: Optional[Sequence[ORMOption]] = ..., refresh_state: Optional[InstanceState[Any]] = ..., with_for_update: Optional[ForUpdateArg] = ..., only_load_props: Optional[Iterable[str]] = ..., identity_token: Optional[Any] = ..., no_autoflush: bool = ..., bind_arguments: Mapping[str, Any] = ..., execution_options: _ExecuteOptions = ..., require_pk_cols: bool = ..., is_user_refresh: bool = ...): ...
+
+class PostLoad:
+    loaders: Incomplete
+    states: Incomplete
+    load_keys: Incomplete
+    def __init__(self) -> None: ...
+    def add_state(self, state, overwrite) -> None: ...
+    def invoke(self, context, path) -> None: ...
+    @classmethod
+    def for_context(cls, context, path, only_load_props): ...
+    @classmethod
+    def path_exists(self, context, path, key): ...
+    @classmethod
+    def callable_for_path(cls, context, path, limit_to_mapper, token, loader_callable, *arg, **kw) -> None: ...
+
+def load_scalar_attributes(mapper, state, attribute_names, passive): ...

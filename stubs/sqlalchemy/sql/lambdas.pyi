@@ -1,0 +1,109 @@
+from . import coercions as coercions, elements as elements, roles as roles, schema as schema, visitors as visitors
+from .. import exc as exc, inspection as inspection, util as util
+from ..util.typing import Literal as Literal
+from .base import Executable as Executable, Options as Options
+from .cache_key import CacheConst as CacheConst
+from .elements import BindParameter as BindParameter, ClauseElement as ClauseElement
+from .operators import ColumnOperators as ColumnOperators
+from .roles import SQLRole as SQLRole
+from _typeshed import Incomplete
+from types import CodeType
+from typing import Any, List, Optional, Tuple, Type, Union
+
+class LambdaOptions(Options):
+    enable_tracking: bool
+    track_closure_variables: bool
+    track_on: Optional[object]
+    global_track_bound_values: bool
+    track_bound_values: bool
+    lambda_cache: Optional[_LambdaCacheType]
+
+def lambda_stmt(lmb: _StmtLambdaType, enable_tracking: bool = ..., track_closure_variables: bool = ..., track_on: Optional[object] = ..., global_track_bound_values: bool = ..., track_bound_values: bool = ..., lambda_cache: Optional[_LambdaCacheType] = ...) -> StatementLambdaElement: ...
+
+class LambdaElement(elements.ClauseElement):
+    __visit_name__: str
+    parent_lambda: Optional[StatementLambdaElement]
+    closure_cache_key: Union[Tuple[Any, ...], Literal[CacheConst.NO_CACHE]]
+    role: Type[SQLRole]
+    fn: _AnyLambdaType
+    tracker_key: Tuple[CodeType, ...]
+    opts: Incomplete
+    def __init__(self, fn: _LambdaType, role: Type[SQLRole], opts: Union[Type[LambdaOptions], LambdaOptions] = ..., apply_propagate_attrs: Optional[ClauseElement] = ...) -> None: ...
+    def __getattr__(self, key): ...
+
+class DeferredLambdaElement(LambdaElement):
+    lambda_args: Incomplete
+    def __init__(self, fn: _LambdaType, role: Type[roles.SQLRole], opts: Union[Type[LambdaOptions], LambdaOptions] = ..., lambda_args: Tuple[Any, ...] = ...) -> None: ...
+
+class StatementLambdaElement(roles.AllowsLambdaRole, LambdaElement, Executable):
+    def __init__(self, fn: _StmtLambdaType, role: Type[SQLRole], opts: Union[Type[LambdaOptions], LambdaOptions] = ..., apply_propagate_attrs: Optional[ClauseElement] = ...) -> None: ...
+    def __add__(self, other: _StmtLambdaElementType[Any]) -> StatementLambdaElement: ...
+    def add_criteria(self, other: _StmtLambdaElementType[Any], enable_tracking: bool = ..., track_on: Optional[Any] = ..., track_closure_variables: bool = ..., track_bound_values: bool = ...) -> StatementLambdaElement: ...
+    @property
+    def is_select(self): ...
+    @property
+    def is_update(self): ...
+    @property
+    def is_insert(self): ...
+    @property
+    def is_text(self): ...
+    @property
+    def is_delete(self): ...
+    @property
+    def is_dml(self): ...
+    def spoil(self) -> NullLambdaStatement: ...
+
+class NullLambdaStatement(roles.AllowsLambdaRole, elements.ClauseElement):
+    __visit_name__: str
+    def __init__(self, statement) -> None: ...
+    def __getattr__(self, key): ...
+    def __add__(self, other): ...
+    def add_criteria(self, other, **kw): ...
+
+class LinkedLambdaElement(StatementLambdaElement):
+    parent_lambda: StatementLambdaElement
+    opts: Incomplete
+    fn: Incomplete
+    tracker_key: Incomplete
+    def __init__(self, fn: _StmtLambdaElementType[Any], parent_lambda: StatementLambdaElement, opts: Union[Type[LambdaOptions], LambdaOptions]) -> None: ...
+
+class AnalyzedCode:
+    @classmethod
+    def get(cls, fn, lambda_element, lambda_kw, **kw): ...
+    track_bound_values: Incomplete
+    track_closure_variables: Incomplete
+    bindparam_trackers: Incomplete
+    closure_trackers: Incomplete
+    build_py_wrappers: Incomplete
+    def __init__(self, fn, lambda_element, opts) -> None: ...
+
+class NonAnalyzedFunction:
+    closure_bindparams: Optional[List[BindParameter[Any]]]
+    bindparam_trackers: Optional[List[_BoundParameterGetter]]
+    is_sequence: bool
+    expr: ClauseElement
+    def __init__(self, expr: ClauseElement) -> None: ...
+    @property
+    def expected_expr(self) -> ClauseElement: ...
+
+class AnalyzedFunction:
+    closure_bindparams: Optional[List[BindParameter[Any]]]
+    expected_expr: Union[ClauseElement, List[ClauseElement]]
+    bindparam_trackers: Optional[List[_BoundParameterGetter]]
+    analyzed_code: Incomplete
+    fn: Incomplete
+    def __init__(self, analyzed_code, lambda_element, apply_propagate_attrs, fn) -> None: ...
+
+class PyWrapper(ColumnOperators):
+    fn: Incomplete
+    track_bound_values: Incomplete
+    def __init__(self, fn, name, to_evaluate, closure_index: Incomplete | None = ..., getter: Incomplete | None = ..., track_bound_values: bool = ...) -> None: ...
+    def __call__(self, *arg, **kw): ...
+    def operate(self, op, *other, **kwargs): ...
+    def reverse_operate(self, op, other, **kwargs): ...
+    def __bool__(self) -> bool: ...
+    def __getattribute__(self, key): ...
+    def __iter__(self): ...
+    def __getitem__(self, key): ...
+
+def insp(lmb): ...

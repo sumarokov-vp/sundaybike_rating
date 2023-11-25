@@ -1,0 +1,15 @@
+version: "3.8"
+services:
+  rating_bot:
+    container_name: rating_bot
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: docker.simplelogic.ru/sundaybike_rating/rating_bot:latest
+    volumes:
+      - ./rating_bot/data:/app/rating_bot/data
+      - ./credentials.py:/app/credentials.py
+  redis:
+    container_name: redis_sundaybike_rating
+    image: redis:latest
+    restart: always

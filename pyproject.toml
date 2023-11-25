@@ -1,0 +1,102 @@
+[tool.poetry]
+name = "sundaybike-rating"
+version = "0.1.0"
+description = ""
+authors = ["sumarokov-vp <sumarokov.vp@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+mypy = "^1.7.1"
+pytelegrambotapi = "^4.14.0"
+sqlalchemy = "^2.0.23"
+alembic = "^1.12.1"
+psycopg = "^3.1.13"
+psycopg-binary = "^3.1.13"
+redis = "^5.0.1"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.mypy]
+mypy_path = "$MYPY_CONFIG_FILE_DIR/stubs"
+exclude = [
+  'db',
+  'stubs/',
+  'alembic/',
+  'env_.py',
+
+]
+
+[tool.ruff]
+# 1. Enable flake8-bugbear (`B`) rules, in addition to the defaults.
+select = [
+  "E",
+  "F",
+  # "B",
+  # "N", 
+  # "C", 
+  # "T", 
+  # "W",
+]
+ignore = [
+  "E712", # comparison-with-callable use "is" instead of "=="
+  "E711", # comparison-with-callable use "is" instead of "=="
+]
+# 3. Avoid trying to fix flake8-bugbear (`B`) violations.
+unfixable = ["B"]
+exclude = [
+  'db/alchemy_models\.py$',
+  'stubs/',
+  'alembic/',
+]
+
+[tool.ruff.lint.per-file-ignores]
+"easy_p2p/__main__.py" = [
+  "F401", # disable unused imports for main.py - import handlers from other files
+  "E402", # disable module level import not at top of file for main.py - import handlers from other files
+]
+
+[tool.isort]
+import_heading_stdlib= "Standard Library"
+import_heading_thirdparty= "Third Party Stuff"
+import_heading_firstparty= "My Stuff"
+
+multi_line_output= 5
+line_length= 60
+combine_as_imports= "True"
+include_trailing_comma= "True"
+force_grid_wrap= 2
+
+[tool.pyright]
+stubPath = "/stubs"
+venv= ".venv"
+venvPath = "."
+reportUnusedVariable = false
+reportUnusedImport = false
+severityLevel = "none"
+# ignore= [
+#   "stubs/",
+#   "alembic/",
+#   "env_.py",
+#   "easy_p2p/__main__.py",
+# ]
+exclude= [
+  "stubs/",
+  "alembic/",
+  "env_.py",
+  "easy_p2p/__main__.py",
+  ".venv",
+]
+
+[tool.pylint.messages_control]
+disable = [
+  "C0121", # comparison-with-callable use "is" instead of "=="
+  "C0112",
+  "C0114",
+  "C0115",
+  "C0116",
+  "R0911", # too-many-return-statements
+]
