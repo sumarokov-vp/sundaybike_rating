@@ -32,6 +32,7 @@ def parse_csv(file, race_id) -> int:
             for row in csv_reader:
                 logging.debug(f"row: {row}")
                 name = row[0]
+                name = capitalize_name(name)
                 bib_number = row[1]
                 time_str = row[2]
                 sex = row[3]
@@ -60,6 +61,13 @@ def parse_csv(file, race_id) -> int:
     return count
 
 
+def capitalize_name(name):
+    # capitalize all words in name
+    words = name.split(" ")
+    name = " ".join([word.capitalize() for word in words])
+    return name
+
+
 def get_athlete_by_name(name, sex_id) -> int:
     with Session(db_engine) as session:
         replace_name = session.scalar(
@@ -86,15 +94,12 @@ def get_athlete_by_name(name, sex_id) -> int:
             athlete = athletes_swap[0]
             return athlete.id
         else:
-            prepared_name = (
+            prepared_name = capitalize_name(
                 name.replace("ё", "е")
                 .replace("Ё", "Е")
                 .replace(".", "")
                 .replace(",", "")
             )
-            words = prepared_name.split(" ")
-            # capitalize all words
-            prepared_name = " ".join([word.capitalize() for word in words])
             new_athlete = Athlete(
                 name=prepared_name,
                 sex_id=sex_id,
