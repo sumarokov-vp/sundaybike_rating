@@ -80,7 +80,7 @@ class RaceResult(Base):
     )
     athlete: Mapped["Athlete"] = relationship(foreign_keys=[athlete_id])
     race_id: Mapped[int] = mapped_column(
-        ForeignKey("races.id", ondelete="RESTRICT"), nullable=False
+        ForeignKey("races.id", ondelete="CASCADE"), nullable=False
     )
     race: Mapped["Race"] = relationship(foreign_keys=[race_id])
     bib_number: Mapped[str] = mapped_column(String(90))
@@ -98,6 +98,13 @@ class PointsForPlace(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     place: Mapped[int] = mapped_column(Integer, nullable=False)
     points: Mapped[int] = mapped_column(Integer, nullable=False)
+    sex_id: Mapped[int] = mapped_column(
+        ForeignKey("sex.id", ondelete="RESTRICT"),
+        nullable=True,
+    )
+    sex: Mapped["Sex"] = relationship(
+        foreign_keys=[sex_id],
+    )
 
 
 class User(Base):

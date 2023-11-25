@@ -41,6 +41,8 @@ from rating_bot.results import (
 )
 
 bot = TeleBot(BOT_TOKEN)
+bot.delete_webhook()
+
 logging.basicConfig(
     level=logging.DEBUG,
     format="%(asctime)s %(levelname)s:%(message)s",
