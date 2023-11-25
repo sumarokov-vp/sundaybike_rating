@@ -92,6 +92,9 @@ def get_athlete_by_name(name, sex_id) -> int:
                 .replace(".", "")
                 .replace(",", "")
             )
+            words = prepared_name.split(" ")
+            # capitalize all words
+            prepared_name = " ".join([word.capitalize() for word in words])
             new_athlete = Athlete(
                 name=prepared_name,
                 sex_id=sex_id,
