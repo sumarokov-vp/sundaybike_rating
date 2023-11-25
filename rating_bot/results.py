@@ -111,14 +111,15 @@ def all_time_report() -> str:
             csv_writer.writerow(["Место", "ФИО", "Очки", "Пол"])
             position = 1
             for result in results:
-                csv_writer.writerow(
-                    [
-                        str(position),
-                        result[0],
-                        result[1],
-                        result[2],
-                    ]
-                )
+                if result[1] != "0":
+                    csv_writer.writerow(
+                        [
+                            str(position),
+                            result[0],
+                            result[1],
+                            result[2],
+                        ]
+                    )
                 position += 1
         return filename
 

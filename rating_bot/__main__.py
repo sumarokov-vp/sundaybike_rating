@@ -136,7 +136,7 @@ def command_races(message: Message):
         keyboard = InlineKeyboardMarkup()
         for race in races:
             button = InlineKeyboardButton(
-                text=f"{race.date_start} - {race.name}",
+                text=f"{race.date_start:%d-%m-%Y} - {race.name}",
                 callback_data=f"race${race.id}",
             )
             keyboard.add(button)
@@ -267,7 +267,7 @@ def handle_csv(message):
     if file_ext == "csv":
         keyboard = InlineKeyboardMarkup()
         with Session(db_engine) as session:
-            races = session.scalars(select(Race)).all()
+            races = session.scalars(select(Race).order_by(Race.date_start.desc())).all()
             redis_connection.set(
                 f"file_id#{message.from_user.id}", message.document.file_id
             )
