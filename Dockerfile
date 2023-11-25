@@ -12,6 +12,7 @@ RUN curl -sSL https://install.python-poetry.org | python3.12 -
 RUN mkdir /app
 WORKDIR /app
 COPY pyproject.toml ./
+COPY poetry.lock ./
 RUN poetry install
 COPY . /app
 CMD ["python", "-m", "rating_bot"]

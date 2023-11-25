@@ -5,7 +5,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: docker.simplelogic.ru/sundaybike_rating/rating_bot:latest
+    image: docker.simplelogic.ru/sundaybike_rating/rating_bot:x86
     volumes:
       - ./rating_bot/data:/app/rating_bot/data
       - ./credentials.py:/app/credentials.py
