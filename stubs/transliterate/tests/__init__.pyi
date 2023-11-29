@@ -1,0 +1,1 @@
+from transliterate.tests.test_transliterate import TransliterateTest as TransliterateTest

@@ -1,0 +1,20 @@
+from _typeshed import Incomplete
+
+latin_text: str
+armenian_text: str
+cyrillic_text: str
+ukrainian_cyrillic_text: str
+bulgarian_cyrillic_text: str
+georgian_text: str
+greek_text: str
+hebrew_text: str
+mongolian_cyrillic_text: str
+serbian_cyrillic_text: str
+pangram_serbian_cyrillic_text: str
+pangram_serbian_latin_text: str
+test_15_register_custom_language_pack_mapping: Incomplete
+test_33_register_unregister_mapping: Incomplete
+test_34_latin_to_latin_mapping: Incomplete
+test_34_latin_to_latin_characters: str
+test_34_latin_to_latin_reversed_characters: str
+test_34_latin_to_latin_text: str

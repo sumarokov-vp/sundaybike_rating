@@ -61,6 +61,13 @@ def parse_csv(file, race_id) -> int:
     return count
 
 
+def name_pre_process(name) -> str:
+    name = name.replace("ё", "е").replace("Ё", "Е")
+    name = name.replace(".", "").replace(",", "")
+    name = capitalize_name(name)
+    return name
+
+
 def capitalize_name(name):
     # capitalize all words in name
     words = name.split(" ")

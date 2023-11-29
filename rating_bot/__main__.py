@@ -7,17 +7,16 @@ from datetime import datetime
 import redis
 from sqlalchemy import select
 from sqlalchemy.orm import Session
-from telebot import TeleBot
 from telebot.types import (
     CallbackQuery,
     InlineKeyboardButton,
     InlineKeyboardMarkup,
     Message,
 )
+from transliterate import translit
 
 # My Stuff
 from credentials import (
-    BOT_TOKEN,
     REDIS_DB,
     REDIS_HOST,
     REDIS_PORT,
@@ -26,22 +25,21 @@ from db.connection import db_engine
 from db.models import (
     Athlete,
     Race,
-    RaceClass,
     ReplaceName,
-    User,
+)
+from rating_bot import races as races_module
+from rating_bot.bot_instance import (
+    bot,
+    user_is_admin,
 )
 from rating_bot.race_file_parse import (
     merge_athletes,
     parse_csv,
 )
 from rating_bot.results import (
-    all_time_report,
-    plases_rating,
-    race_report,
+    athlete_report,
+    season_report,
 )
-
-bot = TeleBot(BOT_TOKEN)
-bot.delete_webhook()
 
 logging.basicConfig(
     level=logging.DEBUG,
@@ -64,15 +62,6 @@ redis_connection = redis.Redis(
 def command_my_id(message: Message):
     """ """
     bot.reply_to(message, str(message.from_user.id))
-
-
-def user_is_admin(message: Message) -> bool:
-    with Session(db_engine) as session:
-        user = session.get(User, message.from_user.id)
-        if not user:
-            return False
-        else:
-            return True
 
 
 @bot.message_handler(
@@ -116,7 +105,7 @@ Raw csv data:
     func=user_is_admin,
 )
 def rating(message: Message):
-    filename = all_time_report()
+    filename = season_report()
     with open(filename, "r") as csvfile:
         bot.send_document(
             chat_id=message.chat.id,
@@ -125,120 +114,33 @@ def rating(message: Message):
 
 
 @bot.message_handler(
-    commands=["races"],
+    commands=["athlete_report"],
     chat_types=["private"],
     func=user_is_admin,
 )
-def command_races(message: Message):
-    """ """
-    with Session(db_engine) as session:
-        races = session.scalars(select(Race).order_by(Race.date_start.desc())).all()
-        # if not races:
-        #     bot.reply_to(message, "Нет ни одной гонки")
-        keyboard = InlineKeyboardMarkup()
-        for race in races:
-            button = InlineKeyboardButton(
-                text=f"{race.date_start:%d-%m-%Y} - {race.name}",
-                callback_data=f"race${race.id}",
-            )
-            keyboard.add(button)
-        new_race_button = InlineKeyboardButton(
-            text="Новая гонка", callback_data="new_race"
-        )
-        keyboard.add(new_race_button)
-        bot.reply_to(message, "Выберите гонку", reply_markup=keyboard)
-
-
-@bot.callback_query_handler(func=lambda call: call.data.startswith("race$"))
-def race_selected(callback_query: CallbackQuery):
-    race_id = int(callback_query.data.split("$")[1])
-    plases_rating(race_id)
-    filename = race_report(race_id=race_id)
-    with open(filename, "r") as csvfile:
-        bot.send_document(
-            chat_id=callback_query.message.chat.id,
-            document=csvfile,
-        )
-
-    bot.reply_to(callback_query.message, "Рейтинг сформирован")
-
-
-@bot.callback_query_handler(func=lambda call: call.data.startswith("new_race"))
-def new_race(callback_query: CallbackQuery):
-    message = bot.send_message(
-        chat_id=callback_query.message.chat.id,
-        text="Введите название гонки",
-    )
+def athlete_report_command(message: Message):
+    msg = bot.reply_to(message, "Введите имя атлета")
     bot.register_next_step_handler(
-        message,
-        new_race_name,
+        msg,
+        report_athlete_name_inputed,
     )
 
 
-def new_race_name(message: Message):
-    chat_id = message.chat.id
-    if not message.text:
-        bot.reply_to(message, "Название не может быть пустым")
-        return
-    redis_connection.set(f"new_race_name#{chat_id}", message.text)
-    message = bot.send_message(
-        chat_id=chat_id,
-        text="Введите дату начала гонки в формате ДД.ММ.ГГГГ",
-    )
-    bot.register_next_step_handler(
-        message,
-        new_race_date,
-    )
-
-
-def new_race_date(message: Message):
-    chat_id = message.chat.id
-    if not message.text:
-        bot.reply_to(message, "Дата не может быть пустой")
-        return
-    try:
-        datetime.strptime(message.text, "%d.%m.%Y")
-    except ValueError:
-        bot.reply_to(message, "Неверный формат даты")
-        return
-    redis_connection.set(f"new_race_date#{chat_id}", message.text)
-    keyboard = InlineKeyboardMarkup()
+def report_athlete_name_inputed(message):
+    athlete_name = message.text
     with Session(db_engine) as session:
-        classes = session.scalars(select(RaceClass)).all()
-        for race_class in classes:
-            button = InlineKeyboardButton(
-                text=race_class.name,
-                callback_data=f"race_class${race_class.id}",
+        athlete = session.scalars(
+            select(Athlete).where(Athlete.name == athlete_name)
+        ).first()
+        if not athlete:
+            bot.reply_to(message, "Атлет не найден")
+            return
+        filename = athlete_report(athlete.id)
+        with open(filename, "r") as csvfile:
+            bot.send_document(
+                chat_id=message.chat.id,
+                document=csvfile,
             )
-            keyboard.add(button)
-    message = bot.send_message(
-        chat_id=chat_id,
-        text="Введите класс гонки",
-        reply_markup=keyboard,
-    )
-
-
-@bot.callback_query_handler(func=lambda c: c.data.startswith("race_class$"))
-def new_race_class(callback_query: CallbackQuery):
-    class_id = int(callback_query.data.split("$")[1])
-    chat_id = callback_query.message.chat.id
-    race_date_str = str(redis_connection.get(f"new_race_date#{chat_id}"))
-    try:
-        race_date = datetime.strptime(race_date_str, "%d.%m.%Y")
-    except ValueError as e:
-        logging.error(e, exc_info=True)
-        return
-
-    race_name = redis_connection.get(f"new_race_name#{chat_id}")
-    with Session(db_engine) as session:
-        race = Race(
-            name=race_name,
-            date_start=race_date,
-            race_class_id=class_id,
-        )
-        session.add(race)
-        session.commit()
-    bot.reply_to(callback_query.message, "Гонка добавлена")
 
 
 def download_file(file_id: str) -> str:
@@ -366,6 +268,68 @@ def merge_athlete_2(message: Message):
             logging.error(e, exc_info=True)
             return
         bot.reply_to(message, f"Атлеты объединены остался только {athlete_1_name}")
+
+
+@bot.message_handler(
+    commands=["translit"],
+    chat_types=["private"],
+    func=user_is_admin,
+)
+def translit_command(message: Message):
+    """ """
+    with Session(db_engine) as session:
+        athletes = session.scalars(select(Athlete)).all()
+        for athlete in athletes:
+            translit_name = translit(athlete.name, "ru", reversed=False)
+            if translit_name == athlete.name:
+                continue
+            original_athlete = session.scalar(
+                select(Athlete).where(Athlete.name == translit_name)
+            )
+            if original_athlete:
+                merge_athletes(original_athlete.id, athlete.id)
+                continue
+            redis_connection.set(f"translit#{athlete.id}", translit_name)
+            keyboard = InlineKeyboardMarkup()
+            yes_button = InlineKeyboardButton(
+                text="Да",
+                callback_data=f"translit_yes${athlete.id}",
+            )
+            no_button = InlineKeyboardButton(
+                text="Нет",
+                callback_data=f"translit_no${athlete.id}",
+            )
+            keyboard.add(yes_button, no_button)
+
+            bot.send_message(
+                chat_id=message.chat.id,
+                text=f"Делаем транслит {athlete.name} -> {translit_name}",
+                reply_markup=keyboard,
+            )
+
+
+@bot.callback_query_handler(func=lambda c: c.data.startswith("translit_yes$"))
+def translit_yes(callback_query: CallbackQuery):
+    bot.delete_message(
+        chat_id=callback_query.message.chat.id,
+        message_id=callback_query.message.message_id,
+    )
+    athlete_id = int(callback_query.data.split("$")[1])
+    translit_name = str(redis_connection.get(f"translit#{athlete_id}"))
+    with Session(db_engine) as session:
+        athlete = session.get(Athlete, athlete_id)
+        assert athlete
+        athlete.name = translit_name
+        session.commit()
+    bot.reply_to(callback_query.message, "Транслит сделан")
+
+
+@bot.callback_query_handler(func=lambda c: c.data.startswith("translit_no$"))
+def translit_no(callback_query: CallbackQuery):
+    bot.delete_message(
+        chat_id=callback_query.message.chat.id,
+        message_id=callback_query.message.message_id,
+    )
 
 
 if __name__ == "__main__":

@@ -1,0 +1,6 @@
+from _typeshed import Incomplete
+
+mapping: Incomplete
+reversed_specific_mapping: Incomplete
+reversed_specific_pre_processor_mapping: Incomplete
+pre_processor_mapping: Incomplete

@@ -1,3 +1,10 @@
+[tool.pytest.ini_options]
+pythonpath = [
+  ".",
+  "db",
+  "rating_bot",
+]
+
 [tool.poetry]
 name = "sundaybike-rating"
 version = "0.1.0"
@@ -14,6 +21,7 @@ alembic = "^1.12.1"
 psycopg = "^3.1.13"
 psycopg-binary = "^3.1.13"
 redis = "^5.0.1"
+transliterate = "^1.10.2"
 
 
 [build-system]
