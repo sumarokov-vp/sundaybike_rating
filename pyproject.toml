@@ -22,6 +22,7 @@ psycopg = "^3.1.13"
 psycopg-binary = "^3.1.13"
 redis = "^5.0.1"
 transliterate = "^1.10.2"
+sqlfluff = "^2.3.5"
 
 
 [build-system]

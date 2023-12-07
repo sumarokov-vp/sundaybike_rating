@@ -3,62 +3,48 @@ CREATE OR REPLACE FUNCTION public.update_categories ()
     LANGUAGE plpgsql
     AS $$
 BEGIN
-
-  -- MEN
-  INSERT INTO athlete_categories (athlete_id, category_id, start)
-  SELECT
-    q1.athlete_id,
-    CASE
-      WHEN q1.rank <= 20 THEN 1
-      WHEN q1.rank > 20 and q1.rank <= 40 THEN 2
-      WHEN q1.rank > 40 THEN 3
-    END AS category_id,
-    CURRENT_DATE
-  FROM
-  (
+  UPDATE athletes
+  SET category_id= lev_3.best_category_id
+  FROM (
     SELECT
-      SUM(result_points) "points",
-      athlete_id,
-      rank() OVER (ORDER BY SUM(result_points) DESC)
-    FROM race_results
-    INNER JOIN races ON race_results.race_id = races.id
-    INNER JOIN athletes ON race_results.athlete_id = athletes.id
-    WHERE
-      races.date_start >= '2023-01-01'
-      AND races.date_start <= '2023-12-31'
-      AND athletes.sex_id = 1
+      MIN(race_category) as best_category_id,
+      athlete_id
+    FROM
+    (SELECT
+      lev_1.*,
+      round(race_rank::NUMERIC/cnt*100::NUMERIC, 1) as relative_rank,
+      CASE
+        WHEN race_rank::NUMERIC/cnt*100 <= a_category_percentage OR athlete_sex_id = 2
+          THEN 1
+        WHEN race_rank::NUMERIC/cnt*100 > a_category_percentage
+          THEN 2
+      END race_category
+    FROM
+    (SELECT race_results.result_time,
+                rank() OVER (PARTITION BY race_results.race_id, athletes.sex_id ORDER BY race_results.result_time) AS race_rank,
+                race_results.race_id,
+                athletes.id AS athlete_id,
+                athletes.name AS athlete_name,
+                athletes.sex_id AS athlete_sex_id,
+                race_classes.a_category_percentage,
+                counts.cnt
+              FROM race_results
+                JOIN athletes ON race_results.athlete_id = athletes.id
+                JOIN athlete_categories ON athlete_categories.athlete_id = race_results.athlete_id
+                JOIN races ON race_results.race_id = races.id
+                JOIN race_classes ON race_classes.id = races.race_class_id
+                JOIN (
+                  SELECT count(race_id) as cnt, athletes.sex_id, race_id  
+            FROM race_results
+            JOIN athletes ON athletes.id = race_results.athlete_id
+            GROUP BY athletes.sex_id, race_id
+            ORDER BY race_id, athletes.sex_id
+                ) counts on (counts.race_id = race_results.race_id AND counts.sex_id = athletes.sex_id)
+    ) as lev_1
+    ) as lev_2
     GROUP BY athlete_id
-    ORDER BY sum(result_points) DESC
-  ) as q1
-  ON CONFLICT (athlete_id, start) DO NOTHING;
-
-  -- WOMEN
-  INSERT INTO athlete_categories (athlete_id, category_id, start)
-  SELECT
-    q1.athlete_id,
-    CASE
-    WHEN q1.rank <= 10 THEN 1
-    WHEN q1.rank > 10 and q1.rank <= 20 THEN 2
-    WHEN q1.rank > 20 THEN 3
-    END AS category_id,
-    CURRENT_DATE
-  FROM
-  (
-    SELECT
-      SUM(result_points) "points",
-      athlete_id,
-      rank() OVER (ORDER BY SUM(result_points) DESC)
-    FROM race_results
-    INNER JOIN races ON race_results.race_id = races.id
-    INNER JOIN athletes ON race_results.athlete_id = athletes.id
-    WHERE
-      races.date_start >= '2023-01-01'
-      AND races.date_start <= '2023-12-31'
-      AND athletes.sex_id = 2
-    GROUP BY athlete_id
-    ORDER BY sum(result_points) DESC
-  ) as q1
-  ON CONFLICT (athlete_id, start) DO NOTHING;
-
+    ORDER BY MIN(race_category), athlete_id
+  ) as lev_3
+  WHERE athletes.id = lev_3.athlete_id;
 END;
 $$;

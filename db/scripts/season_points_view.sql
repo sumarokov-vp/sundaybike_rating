@@ -1,4 +1,5 @@
 DROP VIEW IF EXISTS season_points;
+
 CREATE OR REPLACE VIEW season_points AS
   SELECT
     row_number() OVER () AS id,

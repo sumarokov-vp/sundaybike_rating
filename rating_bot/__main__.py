@@ -7,6 +7,7 @@ from datetime import datetime
 import redis
 from sqlalchemy import select
 from sqlalchemy.orm import Session
+from telebot import apihelper
 from telebot.types import (
     CallbackQuery,
     InlineKeyboardButton,
@@ -102,7 +103,6 @@ Raw csv data:
 @bot.message_handler(
     commands=["rating"],
     chat_types=["private"],
-    func=user_is_admin,
 )
 def rating(message: Message):
     filename = season_report()
@@ -116,7 +116,6 @@ def rating(message: Message):
 @bot.message_handler(
     commands=["athlete_report"],
     chat_types=["private"],
-    func=user_is_admin,
 )
 def athlete_report_command(message: Message):
     msg = bot.reply_to(message, "Введите имя атлета")
@@ -124,6 +123,28 @@ def athlete_report_command(message: Message):
         msg,
         report_athlete_name_inputed,
     )
+
+
+@bot.message_handler(
+    commands=["rules"],
+    chat_types=["private"],
+)
+def rules_command(message: Message):
+    with open("rules.md", "r") as rules_file:
+        text = rules_file.read()
+        try:
+            bot.send_message(
+                chat_id=message.chat.id,
+                text=text,
+                parse_mode="MarkdownV2",
+            )
+        except apihelper.ApiException as e:
+            bot.send_message(
+                chat_id=message.chat.id,
+                text=text,
+            )
+            logging.error(e, exc_info=True)
+            bot.reply_to(message, "Ошибка при отправке сообщения")
 
 
 def report_athlete_name_inputed(message):
@@ -256,7 +277,12 @@ def merge_athlete_2(message: Message):
         if not athlete_2:
             bot.reply_to(message, "Атлет 2 не найден")
             return
-        merge_athletes(athlete_1.id, athlete_2.id)
+        try:
+            merge_athletes(athlete_1.id, athlete_2.id)
+        except Exception as e:
+            logging.error(e, exc_info=True)
+            bot.reply_to(message, f"Ошибка при объединении {e}")
+            return
         try:
             replace_name = ReplaceName(
                 name=athlete_2.name,
@@ -264,10 +290,11 @@ def merge_athlete_2(message: Message):
             )
             session.add(replace_name)
             session.commit()
+            bot.reply_to(message, f"Атлеты объединены остался только {athlete_1_name}")
         except Exception as e:
             logging.error(e, exc_info=True)
+            bot.reply_to(message, f"Ошибка при добавлении записи замены{e}")
             return
-        bot.reply_to(message, f"Атлеты объединены остался только {athlete_1_name}")
 
 
 @bot.message_handler(

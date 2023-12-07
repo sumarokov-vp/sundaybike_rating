@@ -31,10 +31,7 @@ from db.models import (
     RaceResult,
     Sex,
 )
-from rating_bot.bot_instance import (
-    bot,
-    user_is_admin,
-)
+from rating_bot.bot_instance import bot
 from rating_bot.results import (
     places_rating,
     race_report,
@@ -53,7 +50,6 @@ TEMP_PATH = os.path.join(os.path.dirname(__file__), "data")
 @bot.message_handler(
     commands=["races"],
     chat_types=["private"],
-    func=user_is_admin,
 )
 def command_races(message: Message):
     """ """

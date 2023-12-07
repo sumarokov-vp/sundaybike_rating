@@ -1,5 +1,7 @@
-my_id - Мой ID
-races - Гонки
 rating - Рейтинг
-help - Помощь
+athlete_report - Отчет по спортсмену
+races - Гонки
+rules - Правила
 merge - Объединить аккаунты
+my_id - Мой ID
+help - Помощь

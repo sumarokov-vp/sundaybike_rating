@@ -4,7 +4,6 @@ from datetime import (
     timedelta,
 )
 from decimal import Decimal
-from typing import List
 
 # Third Party Stuff
 from sqlalchemy import (
@@ -56,6 +55,14 @@ class Athlete(Base):
         ForeignKey("sex.id", ondelete="SET NULL"), nullable=False
     )
     sex: Mapped[Sex] = relationship(foreign_keys=[sex_id])
+    category_id: Mapped[int] = mapped_column(
+        ForeignKey("categories.id", ondelete="RESTRICT"),
+        nullable=False,
+        server_default=sql_alchemy_text("3"),
+    )
+    category: Mapped["Category"] = relationship(foreign_keys=[category_id])
+
+    __table_args__ = (UniqueConstraint("name", name="name_uniq"),)
 
 
 class Category(Base):
@@ -75,7 +82,7 @@ class AthleteCategory(Base):
     start: Mapped[datetime] = mapped_column(DateTime, nullable=True)
     end: Mapped[datetime] = mapped_column(DateTime, nullable=True)
     athlete_id: Mapped[int] = mapped_column(
-        ForeignKey("athletes.id", ondelete="RESTRICT"), nullable=False
+        ForeignKey("athletes.id", ondelete="CASCADE"), nullable=False
     )
     athlete: Mapped[Athlete] = relationship(foreign_keys=[athlete_id])
     category_id: Mapped[int] = mapped_column(
@@ -83,9 +90,7 @@ class AthleteCategory(Base):
     )
     category: Mapped[Category] = relationship(foreign_keys=[category_id])
 
-    __table_args__ = (
-        UniqueConstraint("start", "athlete_id", name="athlete_start_uniq"),
-    )
+    __table_args__ = (UniqueConstraint("athlete_id", name="athlete_uniq"),)
 
 
 class RaceClass(Base):
@@ -93,6 +98,9 @@ class RaceClass(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(90))
     multiplier: Mapped[Decimal] = mapped_column(DECIMAL(10, 2), nullable=True)
+    a_category_percentage: Mapped[Decimal] = mapped_column(
+        DECIMAL(10, 2), nullable=True
+    )
 
 
 class Race(Base):
@@ -168,6 +176,7 @@ class User(Base):
 
 class ReplaceName(Base):
     __tablename__ = "replace_name"
+    id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(90), unique=True, primary_key=True)
     replace_name: Mapped[str] = mapped_column(String(90))
 
