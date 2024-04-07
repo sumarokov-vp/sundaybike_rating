@@ -1,7 +1,6 @@
 # Standard Library
 import logging
 import os
-from datetime import datetime
 
 # Third Party Stuff
 import redis
@@ -41,6 +40,9 @@ from rating_bot.results import (
     athlete_report,
     season_report,
 )
+
+# from datetime import datetime
+
 
 logging.basicConfig(
     level=logging.DEBUG,

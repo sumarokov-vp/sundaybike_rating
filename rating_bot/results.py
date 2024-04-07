@@ -10,11 +10,9 @@ import redis
 from sqlalchemy import (
     delete,
     func,
-    join,
     select,
 )
 from sqlalchemy.orm import Session
-from telebot import TeleBot
 
 # My Stuff
 from credentials import (
@@ -142,7 +140,6 @@ def places_rating(race_id: int):
 
 def season_report() -> str:
     with Session(db_engine) as session:
-        seasons = [2023]
         sexes = session.scalars(
             select(Sex).where(Sex.enabled == True).order_by(Sex.id)
         ).all()
@@ -151,12 +148,22 @@ def season_report() -> str:
         filename = os.path.join(TEMP_PATH, filename)
         with open(filename, "w+") as csvfile:
             csv_writer = csv.writer(csvfile, delimiter=";")
+            request = (
+                select(SeasonReport.season)
+                .group_by(SeasonReport.season)
+                .order_by(SeasonReport.season.desc())
+            )
+            logging.debug(request)
+            seasons = session.scalars(
+                select(SeasonReport.season)
+                .group_by(SeasonReport.season)
+                .order_by(SeasonReport.season.desc())
+            ).all()
+            logging.debug(seasons)
             for season in seasons:
-                logging.debug(f"{season=}")
+                logging.debug(f"Season: {season}")
                 for sex in sexes:
-                    logging.debug(f"{sex.name=}")
                     for category in categories:
-                        logging.debug(f"{category.name=}")
                         csv_writer.writerow(["", "", ""])
                         csv_writer.writerow(
                             [
@@ -313,31 +320,32 @@ def season_report_old(year: str) -> str:
         return filename
 
 
-def season_category_report(year: str) -> str:
-    year_begin_date = datetime.strptime(f"{year}-01-01", "%Y-%m-%d")
-    year_end_date = datetime.strptime(f"{year}-12-31", "%Y-%m-%d")
-    filename = f"categories_season_{year}.csv"
-    filename = os.path.join(TEMP_PATH, filename)
-    with Session(db_engine) as session:
-        races = session.scalars(select(Race)).all()
-        for race in races:
-            places_rating(race.id)
-        sexes = session.scalars(select(Sex)).all()
-        categories = session.scalars(select(Category)).all()
-        for sex in sexes:
-            for category in categories:
-                results = session.scalars(
-                    select(CategoryResult)
-                    .join(CategoryResult.result)
-                    .join(RaceResult.athlete)
-                    .join(RaceResult.race)
-                    .where(CategoryResult.category_id == category.id)
-                    .where(Athlete.sex_id == sex.id)
-                    .where(Race.date_start >= year_begin_date)
-                    .where(Race.date_start <= year_end_date)
-                ).all()
-
-    return filename
+#
+# def season_category_report(year: str) -> str:
+#     year_begin_date = datetime.strptime(f"{year}-01-01", "%Y-%m-%d")
+#     year_end_date = datetime.strptime(f"{year}-12-31", "%Y-%m-%d")
+#     filename = f"categories_season_{year}.csv"
+#     filename = os.path.join(TEMP_PATH, filename)
+#     with Session(db_engine) as session:
+#         races = session.scalars(select(Race)).all()
+#         for race in races:
+#             places_rating(race.id)
+#         sexes = session.scalars(select(Sex)).all()
+#         categories = session.scalars(select(Category)).all()
+#         for sex in sexes:
+#             for category in categories:
+#                 results = session.scalars(
+#                     select(CategoryResult)
+#                     .join(CategoryResult.result)
+#                     .join(RaceResult.athlete)
+#                     .join(RaceResult.race)
+#                     .where(CategoryResult.category_id == category.id)
+#                     .where(Athlete.sex_id == sex.id)
+#                     .where(Race.date_start >= year_begin_date)
+#                     .where(Race.date_start <= year_end_date)
+#                 ).all()
+#
+#     return filename
 
 
 def race_report(race_id: int) -> str:

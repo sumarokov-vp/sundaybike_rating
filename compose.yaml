@@ -1,14 +1,26 @@
 version: "3.8"
 services:
+  base:
+    build:
+      context: .
+      target: base
+    image: sumarokovvp/simplelogic:sundaybike_rating_base
+    platform: linux/amd64 # line for building on arm processors
+    profiles:
+      - build
+
   rating_bot:
     container_name: rating_bot
     build:
       context: .
-      dockerfile: Dockerfile
-    image: docker.simplelogic.ru/sundaybike_rating/rating_bot:x86
+      target: app
+    image: sumarokovvp/simplelogic:sundaybike_rating_app
+    platform: linux/amd64 # line for building on arm processors
     volumes:
       - ./rating_bot/data:/app/rating_bot/data
       - ./credentials.py:/app/credentials.py
+    command: python -m rating_bot
+
   redis:
     container_name: redis_sundaybike_rating
     image: redis:latest

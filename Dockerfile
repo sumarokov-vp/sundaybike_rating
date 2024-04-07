@@ -14,5 +14,6 @@ WORKDIR /app
 COPY pyproject.toml ./
 COPY poetry.lock ./
 RUN poetry install
-COPY . /app
-CMD ["python", "-m", "rating_bot"]
+
+FROM base AS app
+COPY . .
