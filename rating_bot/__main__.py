@@ -27,7 +27,6 @@ from db.models import (
     Race,
     ReplaceName,
 )
-from rating_bot import races as races_module
 from rating_bot.bot_instance import (
     bot,
     user_is_admin,
